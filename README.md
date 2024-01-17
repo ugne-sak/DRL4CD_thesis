@@ -1,110 +1,26 @@
-# thesis: Quick Guide
+# Denoising Representation Learning for Causal Discovery
 
-Folder to look at: **[vae_synthetic4jax](vae_synthetic4jax)** 
+ This repository contains the code base of the research project for the master's thesis, presented for MSc in Statistics program at the University of Geneva. The research has been carried out in collaboration with Learning & Adaptive Systems Group at the Department of Computer Science of ETH Zürich.
 
-## Training pipeline
+## Overview
 
-In the main working directory [`vae_synthetic4jax/`](vae_synthetic4jax/) I run `vae_train_ge.py`. On euler, I run:
-```python
-python run_euler_ge.py --config_file config_vae2_ge.yaml
-```
-`config_vae2_ge.yaml` file contains my setup parameters, important ones are under keys *prior*, *VAE_params*, *train*, *slurm*.
-`sergio_params_train.yaml` contains parameters for SERGIO simulator.
+Discovering a causal structure underlying the variables in a system is an important task in many scientific disciplines. Most of the methods for causal structure learning operate under the assumption that observed data is an accurate reflection of the true interactions among the variables in a data-generating mechanism. However, observations in real-world datasets often contain noise and measurement error inherent to the data collection process, distorting the signal of the true dependencies. To mitigate the effect of such technical noise, we propose a principled approach for inferring the distribution of the unobservable signal from its noisy measurements by learning an *amortized variational denoising model*. 
 
-The whole training loop is within funciton `train()` which is in file `train_ge2.py` in the main working directory [`vae_synthetic4jax/`](vae_synthetic4jax/). The important functions in that file are:
-- `train_step()`
-- `kl_divergence()`
-- `reconstruction()`
-- `zero_inflated_poisson_logpmf()`
+<p align="center">
+<img src="main/results/figures/main_figure.png" width="70%" height="70%" />
+</p>
 
-Other classes or functions called up during training are from subdirectory [`vae_synthetic4jax/functions/`](vae_synthetic4jax/functions/):
-- `vae.py`
-- `transformer.py`
-- `prior.py`
+Using a prior given by the generative model, we optimize the evidence lower bound to learn a latent representation of the noisy input that is meaningful under our causal generative assumptions. Figure below illustrates the denoising capability of our approach using a 2-dimensional linear Gaussian Bayesian network $\text{BN}(\mathbf{G}, \mathbf{\Theta})$ modeling $p(\mathbf{s} \mid \mathbf{G}, \mathbf{\Theta})$ as an example. True signal (light green) is contaminated with substantial technical noise (dark green), almost completely masking the true relationship between the two variables in this system. Using only the noisy samples (dark green), our proposed method is able to infer the posterior distribution $p(\mathcal{S} \mid \mathcal{D})$ over the likely signal values (light blue) by minimizing KL divergence to the prior $p(\mathcal{S})$ and optimizing reconstruction accuracy.
 
-## INSTRUCTIONS: training
+<p align="center">
+<img src="main/results/figures/d2_VAE_results.png" width="70%" height="70%" />
+</p>
 
-### linear GBNs (d=2 \ d=4)
-linear Gaussian BN mechanism with our prior, given by the generative model, plus Gaussian correlated noise.
+By amortizing posterior inference into an inference model, our trained models can be used on any unseen dataset from the same generative process. As a result, our denoising model can be combined upstream with structure learning algorithms that do not assume any measurement noise. In the experiments with linear Gaussian BNs and synthetic gene expression data, we demonstrate the empirical advantage of learning a causal model from the denoised representation with both classical and Bayesian structure learning methods. Figure below illustrates the results of joint posterior inference over linear Gaussian BNs using differential Bayesian structure learning framework (DiBS) ([Lorch et al., 2021](https://arxiv.org/abs/2105.11839)).
 
-```python
-python run_euler.py --config_file config_vae2.yaml
-```
-- vae_train.py
-- train.py
-  - uncomment KL with our prior
- 
-### dual (d=10)
-linear Gaussian BN generative mechanism for the signal plus scRNA-seq type of noise on top: Poisson counts and dropout.
-
-```python
-python run_euler.py --config_file config_vae2_sergio_dual.yaml
-```
-- [`vae_train_dual.py`](vae_synthetic4jax/vae_train_dual.py)
-- [`train_dual.py`](vae_synthetic4jax/functions/train_dual.py)
-- [`data_jax.py`](vae_synthetic4jax/functions/synthetic/data_jax.py)
-
-### linear GBNs + unit Gaussian prior (d=4) [ ablation ]
-linear Gaussian BN mechanism with our prior, given by the generative model, plus Gaussian correlated noise.
-
-```python
-python run_euler.py --config_file config_vae2_priorTEST.yaml
-```
-- [`vae_train.py`](vae_synthetic4jax/vae_train.py)
-- [`train.py`](vae_synthetic4jax/functions/train.py)
-  - uncomment KL with isotropic Gaussian prior
-
-### SERGIO (d=10)
-full SERGIO simulator and buffer from AVICI. Possible to add all scRNA-seq noise types.
-
-```python
-python run_euler_ge.py --config_file config_vae2_ge.yaml
-```
-- [`vae_train_ge.py`](vae_synthetic4jax/vae_train_ge.py)
-  - buffer calls `sergio_params_train.yml` where noise types are specified
-  - buffer calls `SERGIO_noise_config_train.yaml` where we manually set percentile for dropout 
-- [`train_ge2.py`](vae_synthetic4jax/functions/train_ge2.py)
-
-## INSTRUCTIONS: testing
-
-### Bayesian causal discovery (DiBS)
-We run DiBS on 3 types of data: *noisy*, *learned*, *true*. Here, *learned* is the denoising representation inferred with our trained model.
-
-```python
-python run_euler.py --config_file config_dibs_run.yaml
-```
-In `config_dibs_run.yaml` select one of the following, depending on the test:
-- [`dibs_test.py`](vae_synthetic4jax/dibs_test.py) - for standard testing (both linear GBNs and gene expressions (tested SERGIO here too))
-- [`dibs_test_DROP2.py`](vae_synthetic4jax/dibs_test_DROP2.py) - central file for running evaluation on different dropout levels and corresponding trained models. Dict sweep_config contains *percentile* key.
-- [`dibs_test_linear.py`](vae_synthetic4jax/dibs_test_linear.py) - for testing exclusively linear GBNs with 4 variables (just more convenient as no. of variables and mechanism don't change)
-
-form all these files we can perform both DiBS parameter screen and final evaluation (depending on sweep_config params dictionary).
-
-### Classical causal discovery (PC and GES)
-We run PC and GES on 3 types of data: *noisy*, *learned*, *true*. Here, *learned* is the denoising representation inferred with our trained model.
-
-```python
-python run_euler_r.py --config_file config_cd_run.yaml
-```
-In `config_dibs_run.yaml` select one of the following, depending on the test:
-- [`cd_methods_test.py`](vae_synthetic4jax/cd_methods_test.py) - for standard testing (both linear GBNs and gene expressions (tested SERGIO here too))
-- [`cd_methods_test_linear.py`](vae_synthetic4jax/cd_methods_test_linear.py) - for testing exclusively linear GBNs with 4 variables (just more convenient as no. of variables and mechanism don't change)
-
-form all these files we can perform both DiBS parameter screen and final evaluation (depending on sweep_config params dictionary).
-
-## W&B: results
-
-### training
-Project is called **vae_synthetic**.
-All runs with linear Gaussian BNs (d=2, d=4), dual (d=10) and SERGIO (d=10).
-
-[`report`](https://wandb.ai/ugne-sak/vae_synthetic/reports/Synthetic-data-d-variables-v1---Vmlldzo1NzI3NjAx)
-
-### evaluation
-Project is called **vae_synthetic_dibs**.
-Here I've collected all parameter sweeps for tuning DiBS as well as all evaluation results from DiBS, DiBS+ as well as GES and PC.
-
-[`report`](https://wandb.ai/ugne-sak/vae_synthetic/reports/Synthetic-data-d-variables-v1---Vmlldzo1NzI3NjAx](https://wandb.ai/ugne-sak/vae_synthetic_dibs/reports/causal-discovery-tests--Vmlldzo1OTg5NTQw)https://wandb.ai/ugne-sak/vae_synthetic_dibs/reports/causal-discovery-tests--Vmlldzo1OTg5NTQw)
-
+<p align="center">
+<img src="main/results/figures/d4_dibs_class.png" width="80%" height="80%" />
+ <img src="main/results/figures/d4_dibs_pred.png" width="60%" height="60%" />
+</p>
 
 
