@@ -1,0 +1,171 @@
+dataset_generator:
+  mechanism: linearGBN
+  # mechanism: linear_additive
+  # mechanism: grn_sergio
+
+dataset_params:
+  num_variables: 4
+  num_observations: 500
+  num_observations_int: 0
+
+data_loader:
+  batch_size: 10
+  meta_size: 10
+
+
+graph:
+  graph_distr:
+    __class__: ErdosRenyi # ErdosRenyi_jax # ScaleFree
+    edges_per_var: 2.0
+
+
+linear_additive_params:
+
+  mechanism_params:
+    weights_distr:
+      # __class__: Gaussian
+      # mean: 0.0
+      # scale: 2.0
+      __class__: SignedUniform
+      low: 0.5
+      high: 2.0
+    
+    biases_distr:
+      __class__: Uniform
+      low: 0.0 
+      high: 0.0 
+    
+    noise_distr:
+      __class__: Gaussian
+    
+    noise_scale_distr:
+      __class__: Uniform
+      low: 1.0
+      high: 1.0
+
+  technical_noise_params:
+    additional_noise_distr:
+      __class__: Gaussian_jax
+    
+    additional_noise_std_distr:
+      __class__: Uniform_jax
+      low: 1.0  #--------here
+      high: 2.0 #--------here
+
+
+
+grn_sergio_params:
+
+  mechanism_params:
+    cell_types:
+      __class__: RandInt_jax
+      low: 3
+      high: 3
+  
+    decays: 0.8 
+    
+    noise_amplitude: 1.0 # 0.5 is better for small scale experiments
+    
+    b:
+      __class__: Uniform_jax
+      low: 1.0
+      high: 3.0
+    
+    k_param:
+      __class__: Uniform_jax
+      low: 1.0
+      high: 5.0
+    
+    k_sign_p:
+      __class__: Beta_jax
+      a: 0.5
+      b: 0.5
+    
+    hill: 2.0 
+
+    n_ko_genes: -1
+
+  technical_noise_params:
+    add_outlier_effect: False
+    add_lib_size_effect: False
+    add_dropout_effect: False
+    return_count_data: False
+    config_file_tech_noise: 'functions/gene/noise_config.yaml'
+    tech_noise_config: 10x-chromium
+
+
+
+
+prior:
+  num_MC_samples: 1000
+  graph_distr:
+    __class__: ErdosRenyi_jax # ScaleFree_jax 
+    edges_per_var: 2.0
+
+  weights_distr:
+      # __class__: Gaussian_jax
+      # mean: 0.0
+      # scale: 2.0
+      __class__: SignedUniform_jax
+      low: 0.5
+      high: 2.0
+
+  biases_distr:
+    __class__: Uniform_jax
+    low: 0.0 
+    high: 0.0 
+  
+  noise_scale_distr:
+    __class__: Uniform_jax
+    low: 1.0
+    high: 1.0
+  
+#-----small
+# VAE_params:
+#   emb_dim: 32
+#   num_heads: 4
+#   num_layers: 2
+#   dropout_prob: 0.0
+#   ffn_dim_factor: 4
+#   num_s_samples: 101
+#   num_sdec_samples: 1
+
+#-----large
+VAE_params:
+  emb_dim: 128
+  num_heads: 8
+  num_layers: 4
+  num_layers_param1: 0
+  dropout_prob: 0.1
+  ffn_dim_factor: 4 
+  num_s_samples: 11 
+  num_sdec_samples: 1 #----------here
+
+train:
+  lr: 1e-2
+  lamb_b1: 0.9
+  lamb_b2: 0.99
+  weight_decay: 1e-2
+  num_epochs: 20000 
+  model_name: transformer
+  epoch_save_weights: 1000
+  checkpoint_file: null
+  seed: 0 
+
+
+wandb:
+  entity: ugne-sak
+  project: vae_synthetic
+  log_online: True
+  wandb_id: null
+
+
+slurm:
+  tag: VAEjax2_meta10_b10_s11_sdec1_MC1000_N500_d4_bias0_lamb09_wd1e2_lr1e2_enc4_cov_morenoise_sunif_kaimingunif
+  python_script: vae_train.py
+  time: '4:00:00'
+  cpu_memory: 5G
+  gpus: 1 
+  gpus_per_task: 1 
+  gpu_memory: 24G 
+

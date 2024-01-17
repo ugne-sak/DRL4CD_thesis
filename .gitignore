@@ -1,0 +1,22 @@
+*.DS_Store
+*.pyc 
+.venv
+.vscode
+
+main/checkpoints
+main/jobs
+main/logs
+main/multirun
+main/outputs
+main/wandb
+
+
+# checkpoints (large files)
+main/results/trained_models/VAEjax2_meta10_b10_s10_sdec10_MC1000_N500_d2_bias0_lamb09_wd1e2_lr1e3_poisson_moreshift2_loss20rec
+main/results/trained_models/VAEjax2_meta10_b10_s11_sdec1_MC1000_N500_d4_bias0_lamb09_wd1e2_lr1e2_enc4_cov_morenoise_sunif_kaimingunif
+main/results/trained_models/VAEjax2_meta10_b10_s11_sdec1_MC1000_N500_d4_bias0_lamb09_wd1e2_lr1e2_enc4_cov_morenoise_sunif_priorTEST4
+main/results/trained_models/VAEjax2_meta10_b10_s11_sdec1_MC1000_N500_d4_bias0_lamb09_wd1e2_lr1e2_enc4_cov_morenoise_sunif_priorTEST5_predsigma
+main/results/trained_models/VAEjax2_meta20_b20_s11_sdec11_MC1000_N500_d2_bias0_lamb09_wd1e2_lr1e3_SMALLenc_cov_morenoise_signedunif3_kaimingunif_CORRECT_8
+
+# Pixelmator Pro files
+main/results/figures/*.pxd

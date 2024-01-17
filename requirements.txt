@@ -1,0 +1,9 @@
+flax
+torch
+einops
+ipykernel
+seaborn
+scikit-learn
+umap-learn
+igraph
+wandb

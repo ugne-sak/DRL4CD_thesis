@@ -1,0 +1,146 @@
+dataset_generator:
+  mechanism: dual
+
+dataset_params:
+  num_variables: 10
+  num_observations: 500
+  num_observations_int: 0
+
+data_loader:
+  batch_size: 10
+  meta_size: 10
+
+
+graph:
+  graph_distr:
+    __class__: ScaleFree # ErdosRenyi_jax  # ErdosRenyi
+    edges_per_var: 2
+
+
+linear_additive_params:
+
+  mechanism_params:
+    weights_distr:
+      # __class__: Gaussian
+      # mean: 0.0
+      # scale: 2.0
+      __class__: SignedUniform
+      low: 0.5
+      high: 2.0
+    
+    biases_distr:
+      __class__: Uniform
+      low: 0.0 
+      high: 0.0 
+    
+    noise_distr:
+      __class__: Gaussian
+    
+    noise_scale_distr:
+      __class__: Uniform
+      low: 0.5 #--------------here
+      high: 0.5 #--------------here
+
+  # technical_noise_params:
+  #   additional_noise_distr:
+  #     __class__: Gaussian_jax
+    
+  #   additional_noise_std_distr:
+  #     __class__: Uniform_jax
+  #     low: 0.5  #--------here
+  #     high: 2.0 #--------here
+
+dual_params:
+  technical_noise_params:
+    add_outlier_effect: false
+    add_lib_size_effect: false
+    add_dropout_effect: false
+    return_count_data: true
+
+    shift_distr:
+      __class__: Uniform
+      low: 2.0
+      high: 8.0 
+  
+
+
+
+
+
+prior:
+  num_MC_samples: 1000
+  graph_distr:
+    __class__: ScaleFree_jax # ErdosRenyi_jax
+    edges_per_var: 2
+
+  weights_distr:
+      # __class__: Gaussian_jax
+      # mean: 0.0
+      # scale: 2.0
+      __class__: SignedUniform_jax
+      low: 0.5
+      high: 2.0
+
+  biases_distr:
+    __class__: Uniform_jax
+    low: 0.0 
+    high: 0.0 
+  
+  noise_scale_distr:
+    __class__: Uniform_jax
+    low: 0.5
+    high: 0.5
+  
+#-----small
+# VAE_params:
+#   emb_dim: 32
+#   num_heads: 4
+#   num_layers: 2
+#   num_layers_param1: 0
+#   dropout_prob: 0.1
+#   ffn_dim_factor: 4
+#   num_s_samples: 11
+#   num_sdec_samples: 11
+
+#-----large
+VAE_params:
+  emb_dim: 128
+  num_heads: 8
+  num_layers: 8
+  num_layers_param1: 0
+  dropout_prob: 0.1
+  ffn_dim_factor: 4 #--------------------------- changed here!
+  num_s_samples: 10 #--------------------------- changed here!
+  num_sdec_samples: 10 #--------------------------- changed here!
+
+train:
+  lr: 1e-3
+  lamb_b1: 0.9
+  lamb_b2: 0.99
+  weight_decay: 1e-2
+  num_epochs: 1000 
+  model_name: transformer
+  epoch_save_weights: 200
+  checkpoint_file: null
+  seed: 0 
+
+
+wandb:
+  entity: ugne-sak
+  project: vae_synthetic
+  log_online: True
+  wandb_id: null
+
+
+slurm:
+  tag: VAEjax2_meta10_b10_s10_sdec10_MC1000_N500_d2_bias0_lamb09_wd1e2_lr1e3_poisson_moreshift2_loss20rec
+  python_script: vae_train_dual.py
+  time: '2:00:00'
+  cpu_memory: 5G
+  gpus: 1 
+  gpus_per_task: 1 
+  gpu_memory: 24G 
+
+
+# python run_euler.py --config_file config_vae2_sergio_dual.yaml
+

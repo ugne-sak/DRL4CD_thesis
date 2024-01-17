@@ -1,0 +1,158 @@
+defaults:
+  - _self_
+  # - run_job                                   # uncomment to launch on cluster
+  # - override hydra/launcher: submitit_slurm   # uncomment to launch on cluster
+
+
+dataset_generator:
+  mechanism: linearGBN
+
+dataset_params:
+  num_variables: 3
+  num_observations: 10
+  num_observations_int: 0
+
+data_loader:
+  batch_size: 2
+  meta_size: 2
+
+
+graph:
+  graph_distr:
+    __class__: ErdosRenyi # ErdosRenyi or ScaleFree
+    edges_per_var: 2.0
+
+
+linearGBN_params:
+
+  mechanism_params:
+    weights_distr:
+      __class__: SignedUniform
+      low: 0.5
+      high: 2.0
+    
+    biases_distr:
+      __class__: Uniform
+      low: 0.0 
+      high: 0.0 
+    
+    noise_distr:
+      __class__: Gaussian
+    
+    noise_scale_distr:
+      __class__: Uniform
+      low: 0.5 
+      high: 0.5 
+
+  technical_noise_params:
+    additional_noise_distr:
+      __class__: Gaussian_jax
+    
+    additional_noise_std_distr:
+      __class__: Uniform_jax
+      low: 0.5  
+      high: 2.0 
+
+
+dual_params:
+
+  technical_noise_params:
+    add_outlier_effect: false
+    add_lib_size_effect: false
+    add_dropout_effect: true
+    return_count_data: true
+
+    shift_distr:
+      __class__: Uniform
+      low: 2.0
+      high: 8.0 
+    
+    dropout_shape: 8
+    dropout_percentile: 10
+  
+
+
+
+prior:
+  num_MC_samples: 5
+  graph_distr:
+    __class__: ErdosRenyi_jax # ErdosRenyi_jax or ScaleFree_jax
+    edges_per_var: 2.0
+
+  weights_distr:
+      __class__: SignedUniform_jax
+      low: 0.5
+      high: 2.0
+
+  biases_distr:
+    __class__: Uniform_jax
+    low: 0.0 
+    high: 0.0 
+  
+  noise_scale_distr:
+    __class__: Uniform_jax
+    low: 0.5
+    high: 0.5
+  
+
+#-----test
+VAE: VAE2
+train_module: train
+VAE_params:
+  emb_dim: 32
+  num_heads: 4
+  num_layers: 2
+  num_layers_param1: 0
+  dropout_prob: 0.1
+  ffn_dim_factor: 2
+  num_s_samples: 11 # for approximating KL
+  num_sdec_samples: 1
+
+
+
+train:
+  lr: 1e-3
+  lamb_b1: 0.9
+  lamb_b2: 0.99
+  weight_decay: 1e-2
+  num_epochs: 5
+  epoch_save_weights: 200
+  checkpoint_file: null
+  seed: 0 
+
+setup:
+  tag: avi_train
+
+wandb:
+  entity: ugne-sak
+  project: DRL4CD
+  group: test
+  # name: 'custom_name'
+  tags: ['test','linearGBN'] 
+  save_code: true
+  mode: disabled # "online" or "disabled"
+  resume: allow
+
+
+hydra:
+  job:
+    chdir: True # changes working directory to hydra's folder created in scratch
+
+  # sweeper:
+  #   params:
+  #     train.lr: 1e-1, 2e-1
+
+  ## uncomment to launch on cluster
+  # run:
+  #   dir: /cluster/scratch/usakenyte/DRL4CD/main/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}_${setup.tag}
+  # sweep:
+  #   dir: /cluster/scratch/usakenyte/DRL4CD/main/multirun/${now:%Y-%m-%d}/${now:%H-%M-%S}_${setup.tag}
+
+
+
+#----------------------------
+# hydra
+# python vae_train.py -cn config_linearGBN_test.yaml -m   # to launch on GPU
+# python vae_train.py -cn config_linearGBN_test.yaml      # to run on CPU, outputs in command line
+
+
